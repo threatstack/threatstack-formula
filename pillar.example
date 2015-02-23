@@ -1,0 +1,3 @@
+threatstack:
+  pkg_url: 'https://pkg.threatstack.com/'
+  deploy_key: "xxxx-xxxx-your-secret-key-xxxx"
