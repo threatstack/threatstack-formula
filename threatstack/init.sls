@@ -38,5 +38,5 @@ install-threatstack-agent:
 cloudsight-setup:
   cmd.run:
     - cwd: /
-    - name: cloudsight setup --deploy_key={{threatstack.deploy_key}}
+    - name: cloudsight setup --deploy-key={{threatstack.deploy_key}}
     - unless: test -f /opt/threatstack/cloudsight/config/.secret
