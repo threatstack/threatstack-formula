@@ -1,7 +1,5 @@
 # threatstack.sls
 
-# Setup Threat Stack yum repo
-
 # Allow for package repo override from pillar
 {% if pillar['pkg_url'] is defined %}
     {% set pkg_url = pillar['pkg_url'] %}
@@ -25,6 +23,8 @@
     {% set gpgkey = 'https://app.threatstack.com/RPM-GPG-KEY-THREATSTACK' %}
 {% endif %}
 
+{% set key_id = '6EE04BD4' %}
+
 threatstack-repo:
 {% if grains['os_family']=="Debian" %}
   pkg.installed:
@@ -34,8 +34,15 @@ threatstack-repo:
   {# We do this due to issues with key_url #}
   cmd.run:
     - name: 'curl -q -f {{ gpgkey }} | apt-key add -'
+    - unless:
+      - apt-key list| grep {{ key_id }}
   pkgrepo.managed:
     - name: deb {{ pkg_url }} {{ grains['oscodename'] }} main
+    {#
+      Can't use this because of the cert setup on that endpoint. Openssl
+      needs to provide servername.
+    #}
+    {# - key_url: {{ gpgkey }} #}
     - file: '/etc/apt/sources.list.d/threatstack.list'
 {% elif grains['os_family']=="RedHat" %}
   pkgrepo.managed:
