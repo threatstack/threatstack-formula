@@ -1,6 +1,4 @@
-================
-threatstack-formula
-================
+# threatstack-formula
 
 A formula for installing Threat Stack agent
 
@@ -9,10 +7,15 @@ A formula for installing Threat Stack agent
     See the full `Salt Formulas installation and usage instructions
     <http://docs.saltstack.com/en/latest/topics/development/conventions/formulas.html>`_.
 
-Available states
-================
+## Available states
+The following states are available:
+* ``threatstack``: Installs the Threatstack agent.
 
-``threatstack``
-------------
+## Testing
+There is currently no spec testing as a saltstack rspec module does not exist.
 
-Installs the Threatstack agent.
+Integration testing requires setting `TS_DEPLOY_KEY` in the environment to a valid key value for tests to succeed.
+```
+export TS_DEPLOY_KEY='<deploy_key>'
+bundle exec kitchen test
+```
