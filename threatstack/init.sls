@@ -50,12 +50,12 @@ threatstack_public:
 
 install-threatstack-agent:
   pkg.installed:
-    - name: {{ threatstack.name }}
+    - name: threatstack-agent
 
 # Configure identity file by running script, needs to be done only once
 
 cloudsight-setup:
   cmd.run:
     - cwd: /
-    - name: cloudsight setup --deploy-key={{threatstack.deploy_key}}
+    - name: cloudsight setup --deploy-key={{ pillar['deploy_key'] }}
     - unless: test -f /opt/threatstack/cloudsight/config/.secret
