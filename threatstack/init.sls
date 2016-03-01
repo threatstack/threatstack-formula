@@ -6,7 +6,14 @@
 {% if pillar['pkg_url'] is defined %}
     {% set pkg_url = pillar['pkg_url'] %}
 {% else %}
-    {% set pkg_url = 'https://pkg.threatstack.com' %}
+    {% set pkg_url_base = 'https://pkg.threatstack.com' %}
+    {% if grains['os_family']=="Debian" %}
+      {% set pkg_url = [pkg_url_base, 'Ubuntu']|join('/') %}
+    {% elif grains['os']=="AMAZON" %}
+      {% set pkg_url = [pkg_url_base, 'Amazon']|join('/') %}
+    {% else %}
+      {% set pkg_url = [pkg_url_base, 'CentOS']|join('/') %}
+    {% endif %}
 {% endif %}
 
 # Allow for GPG location override from pillar
@@ -28,23 +35,16 @@ threatstack-repo:
   cmd.run:
     - name: 'curl -q -f {{ gpgkey }} | apt-key add -'
   pkgrepo.managed:
-    - humanname: threatstack
-    - name: deb {{ pkg_url }}/Ubuntu {{ grains['oscodename'] }} main
+    - name: deb {{ pkg_url }} {{ grains['oscodename'] }} main
     - file: '/etc/apt/sources.list.d/threatstack.list'
 {% elif grains['os_family']=="RedHat" %}
   pkgrepo.managed:
     - name: threatstack
     - humanname: Threat Stack Package Repository
     - gpgkey: {{ gpgkey }}
-  {% if grains['os']=="AMAZON" %}
-    - baseurl: {{ pkg_url }}/Amazon
     - gpgcheck: 1
     - enabled: 1
-  {% else %}
-    - baseurl: {{ pkg_url }}/CentOS
-    - gpgcheck: 1
-    - enabled: 1
-  {% endif %}
+    - baseurl: {{ pkg_url }}
 {% endif %}
 
 # Install RPM, lock down RPM version
