@@ -59,6 +59,9 @@ threatstack-repo:
 threatstack-agent:
   pkg.installed:
     - name: threatstack-agent
+    {% if pillar['pkg_version'] is defined %}
+    - version: {{ pkg_version }}
+    {% endif %}
     - require:
       - pkgrepo: threatstack-repo
 
