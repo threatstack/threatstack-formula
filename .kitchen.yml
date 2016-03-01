@@ -1,0 +1,27 @@
+---
+driver:
+  name: vagrant
+
+provisioner:
+  name: salt_solo
+  is_file_root: true
+  pillars:
+    top.sls:
+      base:
+        '*':
+          - threatstack
+    threatstack.sls:
+      deploy_key: <%= ENV['TS_DEPLOY_KEY'] %>
+  state_top:
+    base:
+      '*':
+        - threatstack
+
+platforms:
+  - name: debian-7.8
+  - name: ubuntu-12.04
+  - name: ubuntu-14.04
+  - name: centos-6.5
+
+suites:
+  - name: default
