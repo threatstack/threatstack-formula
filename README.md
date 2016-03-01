@@ -1,5 +1,9 @@
 # threatstack-formula
+<!--- Enable once we have rspec
+[![Build Status](https://travis-ci.org/threatstack/threatstack-formula.svg?branch=master)][travis]
 
+[travis]: https://travis-ci.org/threatstack/threatstack-formula
+--->
 A formula for installing Threat Stack agent
 
 .. note::
