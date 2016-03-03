@@ -2,41 +2,65 @@
 
 # Setup Threat Stack yum repo
 
-threatstack_public:
-{% if grains['os']=="Ubuntu" %}
+# Allow for package repo override from pillar
+{% if pillar['pkg_url'] is defined %}
+    {% set pkg_url = pillar['pkg_url'] %}
+{% else %}
+    {% set pkg_url_base = 'https://pkg.threatstack.com' %}
+    {% if grains['os_family']=="Debian" %}
+      {% set pkg_url = [pkg_url_base, 'Ubuntu']|join('/') %}
+    {% elif grains['os']=="AMAZON" %}
+      {% set pkg_url = [pkg_url_base, 'Amazon']|join('/') %}
+    {% else %}
+      {% set pkg_url = [pkg_url_base, 'CentOS']|join('/') %}
+    {% endif %}
+{% endif %}
+
+# Allow for GPG location override from pillar
+{% if pillar['pkg_url'] is defined %}
+    {% set gpgkey = pillar['gpg_key'] %}
+{% elif grains['os_family']=="Debian" %}
+    {% set gpgkey = 'https://app.threatstack.com/APT-GPG-KEY-THREATSTACK' %}
+{% else %}
+    {% set gpgkey = 'https://app.threatstack.com/RPM-GPG-KEY-THREATSTACK' %}
+{% endif %}
+
+threatstack-repo:
+{% if grains['os_family']=="Debian" %}
   pkg.installed:
     - pkgs:
+      - curl
       - apt-transport-https
+  {# We do this due to issues with key_url #}
   cmd.run:
-    - name: 'curl -q -f https://app.threatstack.com/APT-GPG-KEY-THREATSTACK | apt-key add -'
+    - name: 'curl -q -f {{ gpgkey }} | apt-key add -'
   pkgrepo.managed:
-    - humanname: threatstack_public
-    - name: deb {{ threatstack.pkg_url }} Ubuntu {{ grains['oscodename'] }} main" any main
-    - file: '/etc/apt/sources.list.d/threatstack_public.list'
-{% elif grains['os']=="CentOS" %}
-    - humanname: threatstack_public
-    - baseurl: {{ threatstack.pkg_url }}CentOS
+    - name: deb {{ pkg_url }} {{ grains['oscodename'] }} main
+    - file: '/etc/apt/sources.list.d/threatstack.list'
+{% elif grains['os_family']=="RedHat" %}
+  pkgrepo.managed:
+    - name: threatstack
+    - humanname: Threat Stack Package Repository
+    - gpgkey: {{ gpgkey }}
     - gpgcheck: 1
     - enabled: 1
-    - gpgkey: https://app.threatstack.com/YUM-GPG-KEY-THREATSTACK
-{% elif grains['os']=="AMAZON" %}
-    - humanname: threatstack_public
-    - baseurl: {{ threatstack.pkg_url }}Amazon
-    - gpgcheck: 1
-    - enabled: 1
-    - gpgkey: https://app.threatstack.com/YUM-GPG-KEY-THREATSTACK
+    - baseurl: {{ pkg_url }}
 {% endif %}
 
 # Install RPM, lock down RPM version
 
-install-threatstack-agent:
+threatstack-agent:
   pkg.installed:
-    - name: {{ threatstack.name }}
+    - name: threatstack-agent
+    - require:
+      - pkgrepo: threatstack-repo
 
 # Configure identity file by running script, needs to be done only once
 
 cloudsight-setup:
   cmd.run:
     - cwd: /
-    - name: cloudsight setup --deploy-key={{threatstack.deploy_key}}
+    - name: cloudsight setup --deploy-key={{ pillar['deploy_key'] }}
     - unless: test -f /opt/threatstack/cloudsight/config/.secret
+    - require:
+      - pkg: threatstack-agent
