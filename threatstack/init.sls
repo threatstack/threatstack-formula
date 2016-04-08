@@ -36,6 +36,7 @@ threatstack-repo:
   {# We do this due to issues with key_url #}
   cmd.run:
     - name: 'curl -q -f {{ gpgkey }} | apt-key add -'
+    - unless: 'apt-key list | grep "Threat Stack"'
   pkgrepo.managed:
     - name: deb {{ pkg_url }} {{ grains['oscodename'] }} main
     - file: '/etc/apt/sources.list.d/threatstack.list'
