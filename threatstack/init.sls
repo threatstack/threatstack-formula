@@ -23,6 +23,8 @@
     {% set gpgkey = 'https://app.threatstack.com/APT-GPG-KEY-THREATSTACK' %}
 {% else %}
     {% set gpgkey = 'https://app.threatstack.com/RPM-GPG-KEY-THREATSTACK' %}
+    {% set gpgkey_file = '/etc/pki/rpm-gpg/RPM-GPG-KEY-THREATSTACK' %}
+    {% set gpgkey_file_uri = 'file:///etc/pki/rpm-gpg/RPM-GPG-KEY-THREATSTACK' %}
 {% endif %}
 
 threatstack-repo:
@@ -38,10 +40,13 @@ threatstack-repo:
     - name: deb {{ pkg_url }} {{ grains['oscodename'] }} main
     - file: '/etc/apt/sources.list.d/threatstack.list'
 {% elif grains['os_family']=="RedHat" %}
+  cmd.run:
+    - name: 'wget {{ gpgkey }} -O {{ gpgkey_file }}'
+    - creates: {{ gpgkey_file }}
   pkgrepo.managed:
     - name: threatstack
     - humanname: Threat Stack Package Repository
-    - gpgkey: {{ gpgkey }}
+    - gpgkey: {{ gpgkey_file_uri }}
     - gpgcheck: 1
     - enabled: 1
     - baseurl: {{ pkg_url }}
