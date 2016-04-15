@@ -56,10 +56,20 @@ threatstack-repo:
 # Install RPM, lock down RPM version
 
 threatstack-agent:
-  pkg.installed:
+  {% if pillar['ts_agent_latest'] is defined and pillar['ts_agent_latest'] == true %}
+  pkg.latest:
     - name: threatstack-agent
     - require:
       - pkgrepo: threatstack-repo
+  {% else %}
+  pkg.installed:
+    - name: threatstack-agent
+    {% if pillar['ts_agent_version'] is defined %}
+    - version: {{ pillar['ts_agent_version'] }}
+    {% endif %}
+    - require:
+      - pkgrepo: threatstack-repo
+  {% endif %}
 
 # Configure identity file by running script, needs to be done only once
 {% if pillar['ts_configure_agent'] is not defined or pillar['ts_configure_agent'] == true %}
