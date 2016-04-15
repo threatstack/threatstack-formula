@@ -2,3 +2,5 @@ threatstack:
   pkg_url: 'https://mirror.example.com'         {# optional #}
   deploy_key: "xxxx-xxxx-your-secret-key-xxxx"  {# required #}
   ts_configure: true                            {# optional; set to false to skip #}
+  ts_agent_version: 1.4.5.0ubuntu14.0           {# optional; set agent package version #}
+  ts_agent_latest: true                         {# optional; always install the latest version #}
