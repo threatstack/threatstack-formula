@@ -67,6 +67,6 @@ cloudsight-setup:
   cmd.run:
     - cwd: /
     - name: cloudsight setup --deploy-key={{ pillar['deploy_key'] }}
-    - unless: test -f /opt/threatstack/cloudsight/config/.secret
+    - unless: test -f /opt/threatstack/cloudsight/config/.audit
     - require:
       - pkg: threatstack-agent
