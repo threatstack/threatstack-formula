@@ -1,3 +1,4 @@
 threatstack:
   pkg_url: 'https://mirror.example.com'         {# optional #}
   deploy_key: "xxxx-xxxx-your-secret-key-xxxx"  {# required #}
+  ts_configure: true                            {# optional; set to false to skip #}

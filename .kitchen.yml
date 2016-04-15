@@ -11,7 +11,7 @@ provisioner:
         '*':
           - threatstack
     threatstack.sls:
-      deploy_key: <%= ENV['TS_DEPLOY_KEY'] %>
+      deploy_key: <%= ENV['TS_DEPLOY_KEY'] != nil ? ENV['TS_DEPLOY_KEY'] : 'ts_deploy_key' %>
   state_top:
     base:
       '*':
@@ -21,7 +21,7 @@ platforms:
   - name: debian-7.8
   - name: ubuntu-12.04
   - name: ubuntu-14.04
-  - name: centos-6.5
+  - name: centos-6.7
 
 suites:
   - name: default
