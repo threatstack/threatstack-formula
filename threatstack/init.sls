@@ -27,6 +27,12 @@
     {% set gpgkey_file_uri = 'file:///etc/pki/rpm-gpg/RPM-GPG-KEY-THREATSTACK' %}
 {% endif %}
 
+{% if pillar['ts_agent_extra_args'] is defined %}
+  {% set agent_extra_args = pillar['ts_agent_extra_args'] %}
+{% else %}
+  {% set agent_extra_args = '' %}
+{% endif %}
+
 threatstack-repo:
 {% if grains['os_family']=="Debian" %}
   pkg.installed:
@@ -76,7 +82,7 @@ threatstack-agent:
 cloudsight-setup:
   cmd.run:
     - cwd: /
-    - name: cloudsight setup --deploy-key={{ pillar['deploy_key'] }}
+    - name: cloudsight setup --deploy-key={{ pillar['deploy_key'] }} {{ agent_extra_args }}
     - unless: test -f /opt/threatstack/cloudsight/config/.audit
     - require:
       - pkg: threatstack-agent
