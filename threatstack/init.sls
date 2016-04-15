@@ -62,7 +62,7 @@ threatstack-agent:
       - pkgrepo: threatstack-repo
 
 # Configure identity file by running script, needs to be done only once
-
+{% if pillar['ts_no_configure'] is not defined%}
 cloudsight-setup:
   cmd.run:
     - cwd: /
@@ -70,3 +70,4 @@ cloudsight-setup:
     - unless: test -f /opt/threatstack/cloudsight/config/.audit
     - require:
       - pkg: threatstack-agent
+{% endif %}
