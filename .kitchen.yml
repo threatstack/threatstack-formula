@@ -12,6 +12,9 @@ provisioner:
           - threatstack
     threatstack.sls:
       deploy_key: <%= ENV['TS_DEPLOY_KEY'] != nil ? ENV['TS_DEPLOY_KEY'] : 'ts_deploy_key' %>
+      <% if ENV['TS_CONFIG_ARGS'] %>
+      ts_agent_config_args: <%= ENV['TS_CONFIG_ARGS'] %>
+      <% end %>
   state_top:
     base:
       '*':

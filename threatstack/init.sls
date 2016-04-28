@@ -86,4 +86,30 @@ cloudsight-setup:
     - unless: test -f /opt/threatstack/cloudsight/config/.audit
     - require:
       - pkg: threatstack-agent
+
+  {% if pillar['ts_agent_config_args'] is defined %}
+/opt/threatstack/cloudsight/config/.config_args:
+  file.managed:
+    - user: root
+    - group: root
+    - mode: 0644
+    - content:
+      - {{ pillar['ts_agent_config_args'] }}
+
+cloudsight-config:
+  cmd.wait:
+    - cwd: /
+    - name: cloudsight config {{ pillar['ts_agent_config_args'] }}
+    - watch:
+      - file: /opt/threatstack/cloudsight/config/.config_args
+  {% endif %}
+
+{% endif %}
+
+cloudsight:
+  service.running:
+    - enable: True
+{% if pillar['ts_agent_config_args'] is defined %}
+    - watch:
+      - cmd: cloudsight-setup
 {% endif %}
