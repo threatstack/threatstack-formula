@@ -62,7 +62,7 @@ threatstack-repo:
 # Install RPM, lock down RPM version
 
 threatstack-agent:
-  {% if pillar['ts_agent_latest'] is defined and pillar['ts_agent_latest'] == true %}
+  {% if pillar['ts_agent_latest'] is defined and pillar['ts_agent_latest'] == True %}
   pkg.latest:
     - name: threatstack-agent
     - require:
@@ -78,7 +78,7 @@ threatstack-agent:
   {% endif %}
 
 # Configure identity file by running script, needs to be done only once
-{% if pillar['ts_configure_agent'] is not defined or pillar['ts_configure_agent'] == true %}
+{% if pillar['ts_configure_agent'] is not defined or pillar['ts_configure_agent'] == True %}
 cloudsight-setup:
   cmd.run:
     - cwd: /
@@ -109,6 +109,7 @@ cloudsight-config:
 cloudsight:
   service.running:
     - enable: True
+    - restart: True
 {% if pillar['ts_agent_config_args'] is defined %}
     - watch:
       - cmd: cloudsight-setup
