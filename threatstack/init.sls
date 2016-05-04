@@ -93,7 +93,7 @@ cloudsight-setup:
     - user: root
     - group: root
     - mode: 0644
-    - content:
+    - contents:
       - {{ pillar['ts_agent_config_args'] }}
 
 cloudsight-config:
