@@ -112,5 +112,5 @@ cloudsight:
     - restart: True
 {% if pillar['ts_agent_config_args'] is defined %}
     - watch:
-      - cmd: cloudsight-setup
+      - cmd: cloudsight-config
 {% endif %}
