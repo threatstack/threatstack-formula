@@ -33,6 +33,9 @@
   {% set agent_extra_args = '' %}
 {% endif %}
 
+# NOTE: We do not signal the cloudsight service to restart because the package
+# takes care of this.  The workflow differs between fresh installation
+# installation and upgrades.
 threatstack-repo:
 {% if grains['os_family']=="Debian" %}
   pkg.installed:
@@ -106,6 +109,9 @@ cloudsight-config:
 
 {% endif %}
 
+# NOTE: We do not signal the cloudsight service to restart via the package
+# resource because the workflow differs between fresh installation and
+# upgrades.  The package scripts will handle this.
 cloudsight:
   service.running:
     - enable: True
