@@ -7,12 +7,15 @@
     {% set pkg_url = pillar['pkg_url'] %}
 {% else %}
     {% set pkg_url_base = 'https://pkg.threatstack.com' %}
+    {% set pkg_maj_ver = grains['osmajorrelease'] %}
     {% if grains['os_family']=="Debian" %}
       {% set pkg_url = [pkg_url_base, 'Ubuntu']|join('/') %}
-    {% elif grains['os']=="AMAZON" %}
+    {% elif grains['os']=="Amazon" %}
       {% set pkg_url = [pkg_url_base, 'Amazon']|join('/') %}
+    {% elif grains['os']=="Centos" %}
+      {% set pkg_url = [pkg_url_base, 'EL', pkg_maj_ver]|join('/') %}
     {% else %}
-      {% set pkg_url = [pkg_url_base, 'CentOS']|join('/') %}
+      {% set pkg_url = [pkg_url_base, 'EL', '7']|join('/') %}
     {% endif %}
 {% endif %}
 
