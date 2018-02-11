@@ -102,14 +102,15 @@ cloudsight-setup:
     - contents:
       - {{ pillar['ts_agent_config_args'] }}
 
-cloudsight-config:
+{% for config_param in pillar['ts_agent_config_args'] %}
+cloudsight-config-{{ config_param }}:
   cmd.wait:
     - cwd: /
-    - name: cloudsight config {{ pillar['ts_agent_config_args'] }}
+    - name: cloudsight config {{ config_param }}
     - watch:
       - file: /opt/threatstack/cloudsight/config/.config_args
   {% endif %}
-
+{% endfor %}
 {% endif %}
 
 # NOTE: We do not signal the cloudsight service to restart via the package
