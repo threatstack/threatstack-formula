@@ -23,11 +23,12 @@ provisioner:
         - threatstack
 
 platforms:
-  - name: centos-6.7
-  - name: debian-7.8
-  - name: fedora-25
-  - name: ubuntu-12.04
-  - name: ubuntu-14.04
+  - name: centos-6.10
+  - name: centos-7.6
+  - name: debian-8.11
+  - name: debian-9.6
+  - name: ubuntu-16.04
+  - name: ubuntu-18.04
 
 suites:
   - name: default
