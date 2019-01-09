@@ -1,8 +1,7 @@
-threatstack:
-  pkg_url: 'https://mirror.example.com'
-  deploy_key: "xxxx-xxxx-your-secret-key-xxxx"
-  ts_configure: True
-  ts_agent_version: 1.4.5.0ubuntu14.0
-  ts_agent_latest: True
-  ts_agent_config_args: '--enable_foo=1'
-  ts_agent_extra_args: ''
+pkg_url: 'https://mirror.example.com'
+deploy_key: "xxxx-xxxx-your-secret-key-xxxx"
+ts_configure_agent: True
+ts_agent_version: 1.4.5.0ubuntu14.0
+ts_agent_latest: True
+ts_agent_config_args: '--enable_foo=1'
+ts_agent_extra_args: ''
