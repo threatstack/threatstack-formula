@@ -1,12 +1,21 @@
 # threatstack.sls
 
-# Setup Threat Stack yum repo
+# Determine if we are installing agent 1.x or agent 2.x
+{% if (pillar['ts_agent_latest'] is defined and pillar['ts_agent_latest'] == True) or (pillar['ts_agent_version'] is defined and pillar['ts_agent_version'].startswith('2.')) %}
+  {% set install_agent2 = True %}
+{% else %}
+  {% set install_agent2 = False %}
+{% endif %}
 
 # Allow for package repo override from pillar
 {% if pillar['pkg_url'] is defined %}
     {% set pkg_url = pillar['pkg_url'] %}
 {% else %}
-    {% set pkg_url_base = 'https://pkg.threatstack.com' %}
+    {% if install_agent2 == True %}
+      {% set pkg_url_base = 'https://pkg.threatstack.com/v2' %}
+    {% else %}
+      {% set pkg_url_base = 'https://pkg.threatstack.com' %}
+    {% endif %}
     {% set pkg_maj_ver = grains['osmajorrelease'] %}
     {% if grains['os_family']=="Debian" %}
       {% set pkg_url = [pkg_url_base, 'Ubuntu']|join('/') %}
@@ -84,7 +93,36 @@ threatstack-agent:
   {% endif %}
 
 # Configure identity file by running script, needs to be done only once
+# Agent 2.x uses `tsagent` to setup and configure the agent process
+# Agent 1.x uses `cloudsight` to setup and configure the agent process
 {% if pillar['ts_configure_agent'] is not defined or pillar['ts_configure_agent'] == True %}
+  {% if install_agent2 == True %}
+tsagent-setup:
+  cmd.run:
+    - cwd: /
+    - name: tsagent setup --deploy-key={{ pillar['deploy_key'] }} {{ agent_extra_args }}
+    - unless: test -f /opt/threatstack/etc/tsagentd.cfg
+    - require:
+      - pkg: threatstack-agent
+
+    {% if pillar['ts_agent_config_args'] is defined %}
+/opt/threatstack/etc/.config_args:
+  file.managed:
+    - user: root
+    - group: root
+    - mode: 0644
+    - contents:
+      - {{ pillar['ts_agent_config_args'] }}
+
+tsagent-config:
+  cmd.wait:
+    - cwd: /
+    - name: tsagent config {{ pillar['ts_agent_config_args'] }}
+    - watch:
+      - file: /opt/threatstack/etc/.config_args
+    {% endif %}
+
+  {% else %}
 cloudsight-setup:
   cmd.run:
     - cwd: /
@@ -93,7 +131,7 @@ cloudsight-setup:
     - require:
       - pkg: threatstack-agent
 
-  {% if pillar['ts_agent_config_args'] is defined %}
+    {% if pillar['ts_agent_config_args'] is defined %}
 /opt/threatstack/cloudsight/config/.config_args:
   file.managed:
     - user: root
@@ -108,18 +146,32 @@ cloudsight-config:
     - name: cloudsight config {{ pillar['ts_agent_config_args'] }}
     - watch:
       - file: /opt/threatstack/cloudsight/config/.config_args
-  {% endif %}
+    {% endif %}
 
+  {% endif %}
 {% endif %}
 
 # NOTE: We do not signal the cloudsight service to restart via the package
 # resource because the workflow differs between fresh installation and
 # upgrades.  The package scripts will handle this.
+# Agent 1.x is defined as the `cloudsight` service
+# Agent 2.x is defined as the `threatstack` service
+{% if install_agent2 == True %}
+threatstack:
+  service.running:
+    - enable: True
+    - restart: True
+  {% if pillar['ts_agent_config_args'] is defined %}
+    - watch:
+      - cmd: tsagent-config
+  {% endif %}
+{% else %}
 cloudsight:
   service.running:
     - enable: True
     - restart: True
-{% if pillar['ts_agent_config_args'] is defined %}
+  {% if pillar['ts_agent_config_args'] is defined %}
     - watch:
       - cmd: cloudsight-config
+  {% endif %}
 {% endif %}
