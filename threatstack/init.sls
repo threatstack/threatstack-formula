@@ -74,6 +74,15 @@ threatstack-repo:
     - baseurl: {{ pkg_url }}
 {% endif %}
 
+# Shutdown and disable auditd
+# Sometimes the agent install scripts can't do it on Amazon Linux
+disable-auditd-amazonlinux:
+{% if grains['os']=="Amazon" %}
+  name: auditd
+  service.dead:
+    - enable: False
+{% endif %}
+
 # Install RPM, lock down RPM version
 
 threatstack-agent:
