@@ -1,15 +1,15 @@
 # threatstack.sls
 
 # Determine if we are installing agent 1.x or agent 2.x
-{% if (pillar['ts_agent_latest'] is defined and pillar['ts_agent_latest'] == True) or (pillar['ts_agent_version'] is defined and pillar['ts_agent_version'].startswith('2.')) %}
+{% if (salt['pillar.get']('threatstack:agent_latest') is defined and salt['pillar.get']('threatstack:agent_latest') == True) or (salt['pillar.get']('threatstack:agent_version') is defined and salt['pillar.get']('threatstack:agent_version').startswith('2.')) %}
   {% set install_agent2 = True %}
 {% else %}
   {% set install_agent2 = False %}
 {% endif %}
 
 # Allow for package repo override from pillar
-{% if pillar['pkg_url'] is defined %}
-    {% set pkg_url = pillar['pkg_url'] %}
+{% if salt['pillar.get']('threatstack:pkg_url') is defined %}
+    {% set pkg_url = salt['pillar.get']('threatstack:pkg_url') %}
 {% else %}
     {% if install_agent2 == True %}
       {% set pkg_url_base = 'https://pkg.threatstack.com/v2' %}
@@ -29,8 +29,8 @@
 {% endif %}
 
 # Allow for GPG location override from pillar
-{% if pillar['pkg_url'] is defined %}
-    {% set gpgkey = pillar['gpg_key'] %}
+{% if salt['pillar.get']('threatstack:pkg_url') is defined %}
+    {% set gpgkey = salt['pillar.get']('gpg_key') %}
 {% elif grains['os_family']=="Debian" %}
     {% set gpgkey = 'https://app.threatstack.com/APT-GPG-KEY-THREATSTACK' %}
 {% else %}
@@ -39,8 +39,8 @@
     {% set gpgkey_file_uri = 'file:///etc/pki/rpm-gpg/RPM-GPG-KEY-THREATSTACK' %}
 {% endif %}
 
-{% if pillar['ts_agent_extra_args'] is defined %}
-  {% set agent_extra_args = pillar['ts_agent_extra_args'] %}
+{% if salt['pillar.get']('threatstack:agent_extra_args') is defined %}
+  {% set agent_extra_args = salt['pillar.get']('threatstack:agent_extra_args') %}
 {% else %}
   {% set agent_extra_args = '' %}
 {% endif %}
@@ -76,8 +76,8 @@ threatstack-repo:
 
 # Shutdown and disable auditd
 # Sometimes the agent install scripts can't do it on Amazon Linux
-disable-auditd-amazonlinux:
 {% if grains['os']=="Amazon" %}
+disable-auditd-amazonlinux:
   name: auditd
   service.dead:
     - enable: False
@@ -86,7 +86,7 @@ disable-auditd-amazonlinux:
 # Install RPM, lock down RPM version
 
 threatstack-agent:
-  {% if pillar['ts_agent_latest'] is defined and pillar['ts_agent_latest'] == True %}
+  {% if salt['pillar.get']('threatstack:agent_latest') is defined and salt['pillar.get']('threatstack:agent_latest') == True %}
   pkg.latest:
     - name: threatstack-agent
     - require:
@@ -94,8 +94,8 @@ threatstack-agent:
   {% else %}
   pkg.installed:
     - name: threatstack-agent
-    {% if pillar['ts_agent_version'] is defined %}
-    - version: {{ pillar['ts_agent_version'] }}
+    {% if salt['pillar.get']('threatstack:agent_version') is defined %}
+    - version: {{ salt['pillar.get']('threatstack:agent_version') }}
     {% endif %}
     - require:
       - pkgrepo: threatstack-repo
@@ -104,29 +104,29 @@ threatstack-agent:
 # Configure identity file by running script, needs to be done only once
 # Agent 2.x uses `tsagent` to setup and configure the agent process
 # Agent 1.x uses `cloudsight` to setup and configure the agent process
-{% if pillar['ts_configure_agent'] is not defined or pillar['ts_configure_agent'] == True %}
+{% if salt['pillar.get']('threatstack:configure_agent') is not defined or salt['pillar.get']('threatstack:configure_agent') == True %}
   {% if install_agent2 == True %}
 tsagent-setup:
   cmd.run:
     - cwd: /
-    - name: tsagent setup --deploy-key={{ pillar['deploy_key'] }} {{ agent_extra_args }}
+    - name: tsagent setup --deploy-key={{ salt['pillar.get']('threatstack:deploy_key') }} {{ agent_extra_args }}
     - unless: test -f /opt/threatstack/etc/tsagentd.cfg
     - require:
       - pkg: threatstack-agent
 
-    {% if pillar['ts_agent_config_args'] is defined %}
+    {% if salt['pillar.get']('threatstack:agent_config_args') is defined %}
 /opt/threatstack/etc/.config_args:
   file.managed:
     - user: root
     - group: root
     - mode: 0644
     - contents:
-      - {{ pillar['ts_agent_config_args'] }}
+      - {{ salt['pillar.get']('threatstack:agent_config_args') }}
 
 tsagent-config:
   cmd.wait:
     - cwd: /
-    - name: tsagent config {{ pillar['ts_agent_config_args'] }}
+    - name: tsagent config {{ salt['pillar.get']('threatstack:agent_config_args') }}
     - watch:
       - file: /opt/threatstack/etc/.config_args
     {% endif %}
@@ -135,24 +135,24 @@ tsagent-config:
 cloudsight-setup:
   cmd.run:
     - cwd: /
-    - name: cloudsight setup --deploy-key={{ pillar['deploy_key'] }} {{ agent_extra_args }}
+    - name: cloudsight setup --deploy-key={{ salt['pillar.get']('threatstack:deploy_key') }} {{ agent_extra_args }}
     - unless: test -f /opt/threatstack/cloudsight/config/.audit
     - require:
       - pkg: threatstack-agent
 
-    {% if pillar['ts_agent_config_args'] is defined %}
+    {% if salt['pillar.get']('threatstack:agent_config_args') is defined %}
 /opt/threatstack/cloudsight/config/.config_args:
   file.managed:
     - user: root
     - group: root
     - mode: 0644
     - contents:
-      - {{ pillar['ts_agent_config_args'] }}
+      - {{ salt['pillar.get']('threatstack:agent_config_args') }}
 
 cloudsight-config:
   cmd.wait:
     - cwd: /
-    - name: cloudsight config {{ pillar['ts_agent_config_args'] }}
+    - name: cloudsight config {{ salt['pillar.get']('threatstack:agent_config_args') }}
     - watch:
       - file: /opt/threatstack/cloudsight/config/.config_args
     {% endif %}
@@ -170,7 +170,7 @@ threatstack:
   service.running:
     - enable: True
     - restart: True
-  {% if pillar['ts_agent_config_args'] is defined %}
+  {% if salt['pillar.get']('threatstack:agent_config_args') is defined %}
     - watch:
       - cmd: tsagent-config
   {% endif %}
@@ -179,7 +179,7 @@ cloudsight:
   service.running:
     - enable: True
     - restart: True
-  {% if pillar['ts_agent_config_args'] is defined %}
+  {% if salt['pillar.get']('threatstack:agent_config_args') is defined %}
     - watch:
       - cmd: cloudsight-config
   {% endif %}
