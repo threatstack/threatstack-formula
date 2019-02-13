@@ -17,16 +17,17 @@ provisioner:
     # Use this section (and comment out the `pillars_from_files` section)
     # to grab pillar data from environment variables
     # threatstack.sls:
-    #   deploy_key: <%= ENV['TS_DEPLOY_KEY'] != nil ? ENV['TS_DEPLOY_KEY'] : 'ts_deploy_key' %>
-    #   ts_agent_version: <%= ENV['TS_PACKAGE_VERSION'] %>
+    #   threatstack:
+    #     deploy_key: <%= ENV['TS_DEPLOY_KEY'] != nil ? ENV['TS_DEPLOY_KEY'] : 'ts_deploy_key' %>
+    #     agent_version: <%= ENV['TS_PACKAGE_VERSION'] %>
     #   <% if ENV['TS_CONFIG_ARGS'] %>
-    #   ts_agent_config_args: <%= ENV['TS_CONFIG_ARGS'] %>
+    #     agent_config_args: <%= ENV['TS_CONFIG_ARGS'] %>
     #   <% end %>
-    #   ts_agent_version: <%= ENV['TS_PACKAGE_VERSION'] %>
-    # ts_configure_agent: <%= ENV['TS_CONFIGURE_AGENT'] %>
-    # ts_agent_latest: <%= ENV['TS_AGENT_LATEST'] %>
+    #     agent_version: <%= ENV['TS_PACKAGE_VERSION'] %>
+    #     configure_agent: <%= ENV['TS_CONFIGURE_AGENT'] %>
+    #     agent_latest: <%= ENV['TS_AGENT_LATEST'] %>
     #   <% if ENV['TS_SETUP_ARGS'] %>
-    #   ts_agent_extra_args: <%= ENV['TS_SETUP_ARGS'] %>
+    #     agent_extra_args: <%= ENV['TS_SETUP_ARGS'] %>
     #   <% end %>
   state_top:
     base:
