@@ -78,8 +78,8 @@ threatstack-repo:
 # Sometimes the agent install scripts can't do it on Amazon Linux
 {% if grains['os']=="Amazon" %}
 disable-auditd-amazonlinux:
-  name: auditd
   service.dead:
+    - name: auditd
     - enable: False
 {% endif %}
 
