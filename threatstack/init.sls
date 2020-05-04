@@ -78,8 +78,8 @@ threatstack-repo:
 # Sometimes the agent install scripts can't do it on RedHat distros
 {% if grains['os_family']=="RedHat" %}
 disable-auditd-redhat:
-  name: auditd
   service.dead:
+    - name: auditd
     - enable: False
 {% endif %}
 
