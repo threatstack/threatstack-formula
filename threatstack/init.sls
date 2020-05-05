@@ -75,9 +75,9 @@ threatstack-repo:
 {% endif %}
 
 # Shutdown and disable auditd
-# Sometimes the agent install scripts can't do it on Amazon Linux
-{% if grains['os']=="Amazon" %}
-disable-auditd-amazonlinux:
+# Sometimes the agent install scripts can't do it on RedHat distros
+{% if grains['os_family']=="RedHat" %}
+disable-auditd-redhat:
   service.dead:
     - name: auditd
     - enable: False
