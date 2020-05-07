@@ -17,8 +17,6 @@ The following states are available:
     * ex. True
 * `ts_agent_version:`       [optional] Version of agent to install.  By default if no agent is installed the latest version will be be.  Set a version to maintain consistency in an environment or see `ts_agent_latest`.
     * ex. "1.4.5.0ubuntu14.0"
-* `ts_agent_latest:`        [optional] Install the latest agent version.  By default the formula will only ensure that a package is installed.  Set to _True_ to always update to the latest agent version (the latest agent 2.x package).
-    * ex. True
 * `ts_agent_config_args:`   [optional] Optional arguments to be passed to `cloudsight config` or `tsagent config` (depends on version of agent).  Use this to enable optional features.
     * agent 1.x ex. "--enable_foo=1"
     * agent 2.x ex. "--set enable_foo 1"

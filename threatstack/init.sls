@@ -1,37 +1,52 @@
 # threatstack.sls
+{% set os_maj_ver = grains['osmajorrelease'] %}
+{% set os_family = grains['os_family'] %}
+{% set os_name = grains['os'] %}
+{% set agent2_pkg_url_base = 'https://pkg.threatstack.com/v2' %}
+{% set agent1_pkg_url_base = 'https://pkg.threatstack.com' %}
+{% set pkg_url = '' %}
 
-# Determine if we are installing agent 1.x or agent 2.x
-{% if (pillar['ts_agent_latest'] is defined and pillar['ts_agent_latest'] == True) or (pillar['ts_agent_version'] is defined and pillar['ts_agent_version'].startswith('2.')) %}
-  {% set install_agent2 = True %}
-{% else %}
-  {% set install_agent2 = False %}
+# For Debian-based distributions
+{% if grains['os_family']=='Debian' %}
+  {% set os_maj_ver = grains['oscodename'] %}
 {% endif %}
 
-# Allow for package repo override from pillar
+# If the package URL is explicitly set, use the override and move on
 {% if pillar['pkg_url'] is defined %}
-    {% set pkg_url = pillar['pkg_url'] %}
-{% else %}
-    {% if install_agent2 == True %}
-      {% set pkg_url_base = 'https://pkg.threatstack.com/v2' %}
-    {% else %}
-      {% set pkg_url_base = 'https://pkg.threatstack.com' %}
-    {% endif %}
-    {% set pkg_maj_ver = grains['osmajorrelease'] %}
-    {% if grains['os_family']=="Debian" %}
-      {% set pkg_url = [pkg_url_base, 'Ubuntu']|join('/') %}
-    {% elif grains['os']=="Amazon" %}
-      {% set pkg_url = [pkg_url_base, 'Amazon']|join('/') %}
-    {% elif grains['os']=="Centos" %}
-      {% set pkg_url = [pkg_url_base, 'EL', pkg_maj_ver]|join('/') %}
-    {% else %}
-      {% set pkg_url = [pkg_url_base, 'EL', '7']|join('/') %}
-    {% endif %}
+  {% set pkg_url = pillar['pkg_url'] %}
+{% endif %}
+
+# Check if OS is not supported in 2.X, and assign the repository URL appropriately
+{% if pkg_url is not defined %}
+  {% if ([os_name, os_maj_ver].join('-')) in pillar['ts_agent_1x_platforms'] %}
+    {% set pkg_url_base = agent1_pkg_url_base %}
+  {% else %}
+    {% set pkg_url_base = agent2_pkg_url_base %}
+  {% endif %}
+{% endif %}
+
+# Set the rest of the URL path
+#
+# CentOS and EL are fundamentally the same package, so pull from the same place
+{% if os_family=="Debian" %}
+  {% set pkg_url = [pkg_url_base, 'Ubuntu']|join('/') %}
+{% elif os=="Amazon" %}
+  {% if pkg_url_base==agent1_pkg_url_base}
+    {% set pkg_url = [pkg_url_base, 'Amazon']|join('/') %}
+  {% else %}
+    {% set pkg_url = [pkg_url_base, 'Amazon', os_maj_ver]|join('/') %}
+  {% endif %}
+{% elif os_family=="RedHat" %}
+  {% set pkg_url = [pkg_url_base, 'EL', os_maj_ver]|join('/') %}
 {% endif %}
 
 # Allow for GPG location override from pillar
-{% if pillar['pkg_url'] is defined %}
-    {% set gpgkey = pillar['gpg_key'] %}
-{% elif grains['os_family']=="Debian" %}
+{% if pillar['gpg_key'] is defined %}
+  {% set gpgkey = pillar['gpg_key'] %}
+  {% if os_family=="RedHat" %}
+    {% set gpgkey_file = pillar['gpg_key_file'] %}
+    {% set gpgkey_file_uri = pillar['gpg_key_file_uri'] %}
+{% elif os_family=="Debian" %}
     {% set gpgkey = 'https://app.threatstack.com/APT-GPG-KEY-THREATSTACK' %}
 {% else %}
     {% set gpgkey = 'https://app.threatstack.com/RPM-GPG-KEY-THREATSTACK' %}
@@ -49,7 +64,7 @@
 # takes care of this.  The workflow differs between fresh installation
 # installation and upgrades.
 threatstack-repo:
-{% if grains['os_family']=="Debian" %}
+{% if os_family=="Debian" %}
   pkg.installed:
     - pkgs:
       - curl
@@ -59,9 +74,9 @@ threatstack-repo:
     - name: 'curl -q -f {{ gpgkey }} | apt-key add -'
     - unless: 'apt-key list | grep "Threat Stack"'
   pkgrepo.managed:
-    - name: deb {{ pkg_url }} {{ grains['oscodename'] }} main
+    - name: deb {{ pkg_url }} {{ os_maj_ver }} main
     - file: '/etc/apt/sources.list.d/threatstack.list'
-{% elif grains['os_family']=="RedHat" %}
+{% elif os_family=="RedHat" %}
   cmd.run:
     - name: 'wget {{ gpgkey }} -O {{ gpgkey_file }}'
     - creates: {{ gpgkey_file }}
@@ -76,17 +91,16 @@ threatstack-repo:
 
 # Shutdown and disable auditd
 # Sometimes the agent install scripts can't do it on RedHat distros
-{% if grains['os_family']=="RedHat" %}
+{% if os_family=="RedHat" %}
 disable-auditd-redhat:
   service.dead:
     - name: auditd
     - enable: False
 {% endif %}
 
-# Install RPM, lock down RPM version
-
+# If no version defined, install latest from defined repository
 threatstack-agent:
-  {% if pillar['ts_agent_latest'] is defined and pillar['ts_agent_latest'] == True %}
+  {% if pillar['ts_agent_version'] is not defined %}
   pkg.latest:
     - name: threatstack-agent
     - require:
@@ -94,9 +108,7 @@ threatstack-agent:
   {% else %}
   pkg.installed:
     - name: threatstack-agent
-    {% if pillar['ts_agent_version'] is defined %}
     - version: {{ pillar['ts_agent_version'] }}
-    {% endif %}
     - require:
       - pkgrepo: threatstack-repo
   {% endif %}
@@ -105,7 +117,7 @@ threatstack-agent:
 # Agent 2.x uses `tsagent` to setup and configure the agent process
 # Agent 1.x uses `cloudsight` to setup and configure the agent process
 {% if pillar['ts_configure_agent'] is not defined or pillar['ts_configure_agent'] == True %}
-  {% if install_agent2 == True %}
+  {% if pkg_url_base==agent2_pkg_url_base}
 tsagent-setup:
   cmd.run:
     - cwd: /
@@ -165,7 +177,7 @@ cloudsight-config:
 # upgrades.  The package scripts will handle this.
 # Agent 1.x is defined as the `cloudsight` service
 # Agent 2.x is defined as the `threatstack` service
-{% if install_agent2 == True %}
+{% if pkg_url_base==agent2_pkg_url_base}
 threatstack:
   service.running:
     - enable: True
