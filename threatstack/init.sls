@@ -5,6 +5,7 @@
 {% set agent2_pkg_url_base = 'https://pkg.threatstack.com/v2' %}
 {% set agent1_pkg_url_base = 'https://pkg.threatstack.com' %}
 {% set pkg_url = '' %}
+{% set pkg_url_base = '' %}
 
 # For Debian-based distributions
 {% if grains['os_family']=='Debian' %}
@@ -30,8 +31,8 @@
 # CentOS and EL are fundamentally the same package, so pull from the same place
 {% if os_family=="Debian" %}
   {% set pkg_url = [pkg_url_base, 'Ubuntu']|join('/') %}
-{% elif os=="Amazon" %}
-  {% if pkg_url_base==agent1_pkg_url_base}
+{% elif os_name=="Amazon" %}
+  {% if pkg_url_base==agent1_pkg_url_base %}
     {% set pkg_url = [pkg_url_base, 'Amazon']|join('/') %}
   {% else %}
     {% set pkg_url = [pkg_url_base, 'Amazon', os_maj_ver]|join('/') %}
@@ -46,6 +47,7 @@
   {% if os_family=="RedHat" %}
     {% set gpgkey_file = pillar['gpg_key_file'] %}
     {% set gpgkey_file_uri = pillar['gpg_key_file_uri'] %}
+  {% endif %}
 {% elif os_family=="Debian" %}
     {% set gpgkey = 'https://app.threatstack.com/APT-GPG-KEY-THREATSTACK' %}
 {% else %}
@@ -117,7 +119,7 @@ threatstack-agent:
 # Agent 2.x uses `tsagent` to setup and configure the agent process
 # Agent 1.x uses `cloudsight` to setup and configure the agent process
 {% if pillar['ts_configure_agent'] is not defined or pillar['ts_configure_agent'] == True %}
-  {% if pkg_url_base==agent2_pkg_url_base}
+  {% if pkg_url_base==agent2_pkg_url_base %}
 tsagent-setup:
   cmd.run:
     - cwd: /
@@ -177,7 +179,7 @@ cloudsight-config:
 # upgrades.  The package scripts will handle this.
 # Agent 1.x is defined as the `cloudsight` service
 # Agent 2.x is defined as the `threatstack` service
-{% if pkg_url_base==agent2_pkg_url_base}
+{% if pkg_url_base==agent2_pkg_url_base %}
 threatstack:
   service.running:
     - enable: True
