@@ -1,44 +1,43 @@
 # threatstack.sls
-{% set os_maj_ver = grains['osmajorrelease'] %}
+{% set os_maj_ver = { 'ver': grains['osmajorrelease'] }  %}
 {% set os_family = grains['os_family'] %}
 {% set os_name = grains['os'] %}
 {% set agent2_pkg_url_base = 'https://pkg.threatstack.com/v2' %}
 {% set agent1_pkg_url_base = 'https://pkg.threatstack.com' %}
-{% set pkg_url = '' %}
-{% set pkg_url_base = '' %}
+{% set pkg_location = { 'pkg_url': '' } %}
 
 # For Debian-based distributions
 {% if grains['os_family']=='Debian' %}
-  {% set os_maj_ver = grains['oscodename'] %}
+  {% set _ =  os_maj_ver.update({ 'ver': grains['oscodename']}) %}
 {% endif %}
 
 # If the package URL is explicitly set, use the override and move on
 {% if pillar['pkg_url'] is defined %}
-  {% set pkg_url = pillar['pkg_url'] %}
+  {% set _ = pkg_location.update({ 'pkg_url': pillar['pkg_url']}) %}
 {% endif %}
 
 # Check if OS is not supported in 2.X, and assign the repository URL appropriately
 {% if pkg_url is not defined %}
-  {% if ([os_name, os_maj_ver].join('-')) in pillar['ts_agent_1x_platforms'] %}
-    {% set pkg_url_base = agent1_pkg_url_base %}
+  {% if ([os_name, os_maj_ver.ver]|join('-')) in pillar['ts_agent_1x_platforms'] %}
+    {% set _ = pkg_location.update({ 'pkg_url': agent1_pkg_url_base}) %}
   {% else %}
-    {% set pkg_url_base = agent2_pkg_url_base %}
+    {% set _ = pkg_location.update({ 'pkg_url': agent2_pkg_url_base}) %}
   {% endif %}
-{% endif %}
 
-# Set the rest of the URL path
-#
-# CentOS and EL are fundamentally the same package, so pull from the same place
-{% if os_family=="Debian" %}
-  {% set pkg_url = [pkg_url_base, 'Ubuntu']|join('/') %}
-{% elif os_name=="Amazon" %}
-  {% if pkg_url_base==agent1_pkg_url_base %}
-    {% set pkg_url = [pkg_url_base, 'Amazon']|join('/') %}
-  {% else %}
-    {% set pkg_url = [pkg_url_base, 'Amazon', os_maj_ver]|join('/') %}
+  # Set the rest of the URL path
+  #
+  # CentOS and EL are fundamentally the same package, so pull from the same place
+  {% if os_family=="Debian" %}
+    {% set _ = pkg_location.update({ 'pkg_url': ([pkg_location.pkg_url, 'Ubuntu']|join('/')) }) %}
+  {% elif os_name=="Amazon" %}
+    {% if pkg_location.pkg_url==agent1_pkg_url_base %}
+      {% set _ = pkg_location.update({ 'pkg_url': ([pkg_location.pkg_url, 'Amazon']|join('/')) }) %}
+    {% else %}
+      {% set _ = pkg_location.update({ 'pkg_url': ([pkg_location.pkg_url, 'Amazon', os_maj_ver.ver]|join('/')) }) %}
+    {% endif %}
+  {% elif os_family=="RedHat" %}
+    {% set _ = pkg_location.update({ 'pkg_url': ([pkg_location.pkg_url, 'EL', os_maj_ver.ver]|join('/')) }) %}
   {% endif %}
-{% elif os_family=="RedHat" %}
-  {% set pkg_url = [pkg_url_base, 'EL', os_maj_ver]|join('/') %}
 {% endif %}
 
 # Allow for GPG location override from pillar
@@ -76,7 +75,7 @@ threatstack-repo:
     - name: 'curl -q -f {{ gpgkey }} | apt-key add -'
     - unless: 'apt-key list | grep "Threat Stack"'
   pkgrepo.managed:
-    - name: deb {{ pkg_url }} {{ os_maj_ver }} main
+    - name: deb {{ pkg_location.pkg_url }} {{ os_maj_ver.ver }} main
     - file: '/etc/apt/sources.list.d/threatstack.list'
 {% elif os_family=="RedHat" %}
   cmd.run:
@@ -88,16 +87,14 @@ threatstack-repo:
     - gpgkey: {{ gpgkey_file_uri }}
     - gpgcheck: 1
     - enabled: 1
-    - baseurl: {{ pkg_url }}
+    - baseurl: {{ pkg_location.pkg_url }}
 {% endif %}
 
 # Shutdown and disable auditd
 # Sometimes the agent install scripts can't do it on RedHat distros
 {% if os_family=="RedHat" %}
-disable-auditd-redhat:
-  service.dead:
-    - name: auditd
-    - enable: False
+'/sbin/service auditd stop && chkconfig auditd off':
+  cmd.run
 {% endif %}
 
 # If no version defined, install latest from defined repository
@@ -119,7 +116,7 @@ threatstack-agent:
 # Agent 2.x uses `tsagent` to setup and configure the agent process
 # Agent 1.x uses `cloudsight` to setup and configure the agent process
 {% if pillar['ts_configure_agent'] is not defined or pillar['ts_configure_agent'] == True %}
-  {% if pkg_url_base==agent2_pkg_url_base %}
+  {% if pkg_location.pkg_url.startswith(agent2_pkg_url_base) %}
 tsagent-setup:
   cmd.run:
     - cwd: /
@@ -179,7 +176,7 @@ cloudsight-config:
 # upgrades.  The package scripts will handle this.
 # Agent 1.x is defined as the `cloudsight` service
 # Agent 2.x is defined as the `threatstack` service
-{% if pkg_url_base==agent2_pkg_url_base %}
+{% if pkg_location.pkg_url.startswith(agent2_pkg_url_base) %}
 threatstack:
   service.running:
     - enable: True
