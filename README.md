@@ -15,7 +15,7 @@ The following states are available:
     * ex. "xxxx-xxxx-your-secret-key-xxxx"
 * `ts_configure_agent:`     [optional] If the agent should be configured during run.  Set to False if installing agent into an AMI.
     * ex. True
-* `ts_agent_version:`       [optional] Version of agent to install.  By default if no agent is installed the latest version will be be.  Set a version to maintain consistency in an environment.
+* `ts_agent_version:`       [optional] Version of agent to install.  By default if this setting is omitted, the latest version will be installed.  Set a version to maintain consistency in an environment.
     * ex. "1.4.5.0ubuntu14.0"
 * `ts_agent_config_args:`   [optional] Optional arguments to be passed to `cloudsight config` or `tsagent config` (depends on version of agent).  Use this to enable optional features.
     * agent 1.x ex. "--enable_foo=1"
