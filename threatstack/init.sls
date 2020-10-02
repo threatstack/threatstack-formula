@@ -130,7 +130,7 @@ tsagent-setup:
   file.managed:
     - user: root
     - group: root
-    - mode: 0644
+    - mode: '0644'
     - contents:
       - {{ pillar['ts_agent_config_args'] }}
 
@@ -156,7 +156,7 @@ cloudsight-setup:
   file.managed:
     - user: root
     - group: root
-    - mode: 0644
+    - mode: '0644'
     - contents:
       - {{ pillar['ts_agent_config_args'] }}
 
