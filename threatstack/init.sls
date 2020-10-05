@@ -79,7 +79,7 @@ threatstack-repo:
     - file: '/etc/apt/sources.list.d/threatstack.list'
 {% elif os_family=="RedHat" %}
   cmd.run:
-    - name: 'wget {{ gpgkey }} -O {{ gpgkey_file }}'
+    - name: 'curl {{ gpgkey }} -O {{ gpgkey_file }}'
     - creates: {{ gpgkey_file }}
   pkgrepo.managed:
     - name: threatstack
