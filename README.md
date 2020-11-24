@@ -52,3 +52,7 @@ This method requires updating `deploy_key` pillar item in `pillar.example` to a 
 <Edit `pillar.example`>
 bundle exec kitchen test
 ```
+
+## Contributing enhancements/fixes
+
+See the [CONTRIBUTING document](CONTRIBUTING.md) for details.
