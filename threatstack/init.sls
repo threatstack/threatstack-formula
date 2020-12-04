@@ -3,7 +3,6 @@
 {% set os_family = grains['os_family'] %}
 {% set os_name = grains['os'] %}
 {% set agent2_pkg_url_base = 'https://pkg.threatstack.com/v2' %}
-{% set agent1_pkg_url_base = 'https://pkg.threatstack.com' %}
 {% set pkg_location = { 'pkg_url': '' } %}
 
 # For Debian-based distributions
@@ -18,11 +17,7 @@
 
 # Check if OS is not supported in 2.X, and assign the repository URL appropriately
 {% if pkg_url is not defined %}
-  {% if ([os_name, os_maj_ver.ver]|join('-')) in pillar['ts_agent_1x_platforms'] %}
-    {% set _ = pkg_location.update({ 'pkg_url': agent1_pkg_url_base}) %}
-  {% else %}
-    {% set _ = pkg_location.update({ 'pkg_url': agent2_pkg_url_base}) %}
-  {% endif %}
+  {% set _ = pkg_location.update({ 'pkg_url': agent2_pkg_url_base}) %}
 
   # Set the rest of the URL path
   #
@@ -30,8 +25,9 @@
   {% if os_family=="Debian" %}
     {% set _ = pkg_location.update({ 'pkg_url': ([pkg_location.pkg_url, 'Ubuntu']|join('/')) }) %}
   {% elif os_name=="Amazon" %}
-    {% if pkg_location.pkg_url==agent1_pkg_url_base %}
-      {% set _ = pkg_location.update({ 'pkg_url': ([pkg_location.pkg_url, 'Amazon']|join('/')) }) %}
+    # First version of Amazon Linux 1 was '2011.09'
+    {% if os_maj_ver.ver > 2010 %}
+      {% set _ = pkg_location.update({ 'pkg_url': ([pkg_location.pkg_url, 'Amazon', '1']|join('/')) }) %}
     {% else %}
       {% set _ = pkg_location.update({ 'pkg_url': ([pkg_location.pkg_url, 'Amazon', os_maj_ver.ver]|join('/')) }) %}
     {% endif %}
@@ -79,7 +75,7 @@ threatstack-repo:
     - file: '/etc/apt/sources.list.d/threatstack.list'
 {% elif os_family=="RedHat" %}
   cmd.run:
-    - name: 'curl {{ gpgkey }} -O {{ gpgkey_file }}'
+    - name: 'curl {{ gpgkey }} -o {{ gpgkey_file }}'
     - creates: {{ gpgkey_file }}
   pkgrepo.managed:
     - name: threatstack
@@ -113,10 +109,7 @@ threatstack-agent:
   {% endif %}
 
 # Configure identity file by running script, needs to be done only once
-# Agent 2.x uses `tsagent` to setup and configure the agent process
-# Agent 1.x uses `cloudsight` to setup and configure the agent process
 {% if pillar['ts_configure_agent'] is not defined or pillar['ts_configure_agent'] == True %}
-  {% if pkg_location.pkg_url.startswith(agent2_pkg_url_base) %}
 tsagent-setup:
   cmd.run:
     - cwd: /
@@ -125,7 +118,7 @@ tsagent-setup:
     - require:
       - pkg: threatstack-agent
 
-    {% if pillar['ts_agent_config_args'] is defined %}
+  {% if pillar['ts_agent_config_args'] is defined %}
 /opt/threatstack/etc/.config_args:
   file.managed:
     - user: root
@@ -140,58 +133,17 @@ tsagent-config:
     - name: tsagent config {{ pillar['ts_agent_config_args'] }}
     - watch:
       - file: /opt/threatstack/etc/.config_args
-    {% endif %}
-
-  {% else %}
-cloudsight-setup:
-  cmd.run:
-    - cwd: /
-    - name: cloudsight setup --deploy-key={{ pillar['deploy_key'] }} {{ agent_extra_args }}
-    - unless: test -f /opt/threatstack/cloudsight/config/.audit
-    - require:
-      - pkg: threatstack-agent
-
-    {% if pillar['ts_agent_config_args'] is defined %}
-/opt/threatstack/cloudsight/config/.config_args:
-  file.managed:
-    - user: root
-    - group: root
-    - mode: '0644'
-    - contents:
-      - {{ pillar['ts_agent_config_args'] }}
-
-cloudsight-config:
-  cmd.wait:
-    - cwd: /
-    - name: cloudsight config {{ pillar['ts_agent_config_args'] }}
-    - watch:
-      - file: /opt/threatstack/cloudsight/config/.config_args
-    {% endif %}
-
   {% endif %}
 {% endif %}
 
 # NOTE: We do not signal the cloudsight service to restart via the package
 # resource because the workflow differs between fresh installation and
 # upgrades.  The package scripts will handle this.
-# Agent 1.x is defined as the `cloudsight` service
-# Agent 2.x is defined as the `threatstack` service
-{% if pkg_location.pkg_url.startswith(agent2_pkg_url_base) %}
 threatstack:
   service.running:
     - enable: True
     - restart: True
-  {% if pillar['ts_agent_config_args'] is defined %}
+{% if pillar['ts_agent_config_args'] is defined %}
     - watch:
       - cmd: tsagent-config
-  {% endif %}
-{% else %}
-cloudsight:
-  service.running:
-    - enable: True
-    - restart: True
-  {% if pillar['ts_agent_config_args'] is defined %}
-    - watch:
-      - cmd: cloudsight-config
-  {% endif %}
 {% endif %}
