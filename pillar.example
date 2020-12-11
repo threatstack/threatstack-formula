@@ -1,5 +1,5 @@
 deploy_key: "xxxx-xxxx-your-secret-key-xxxx"
-ts_configure_agent: True
 ts_agent_version: 2.3.0*
-ts_agent_config_args: '--set log.level info'
+ts_configure_agent: True
 ts_agent_extra_args: ''
+ts_agent_config_args: ''

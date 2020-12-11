@@ -8,8 +8,8 @@ provisioner:
   is_file_root: true
   # Use this section (and comment out the `threatstack.sls` definition in the `pillars` section)
   # to grab pillar data from the `pillar.example` file
-  pillars_from_files:
-    threatstack.sls: pillar.example
+  # pillars_from_files:
+  #   threatstack.sls: pillar.example
   pillars:
     top.sls:
       base:
@@ -17,18 +17,16 @@ provisioner:
           - threatstack
     # Use this section (and comment out the `pillars_from_files` section)
     # to grab pillar data from environment variables
-    # threatstack.sls:
-    #   deploy_key: <%= ENV['TS_DEPLOY_KEY'] != nil ? ENV['TS_DEPLOY_KEY'] : 'ts_deploy_key' %>
-    #   ts_agent_version: <%= ENV['TS_PACKAGE_VERSION'] %>
-    #   <% if ENV['TS_CONFIG_ARGS'] %>
-    #   ts_agent_config_args: <%= ENV['TS_CONFIG_ARGS'] %>
-    #   <% end %>
-    #   ts_agent_version: <%= ENV['TS_PACKAGE_VERSION'] %>
-    # ts_configure_agent: <%= ENV['TS_CONFIGURE_AGENT'] %>
-    # ts_agent_latest: <%= ENV['TS_AGENT_LATEST'] %>
-    #   <% if ENV['TS_SETUP_ARGS'] %>
-    #   ts_agent_extra_args: <%= ENV['TS_SETUP_ARGS'] %>
-    #   <% end %>
+    threatstack.sls:
+      deploy_key: <%= ENV['TS_DEPLOY_KEY'] != nil ? ENV['TS_DEPLOY_KEY'] : 'ts_deploy_key' %>
+      ts_agent_version: <%= ENV['TS_PACKAGE_VERSION'] %>
+      ts_configure_agent: <%= ENV['TS_CONFIGURE_AGENT'] %>
+      <% if ENV['TS_SETUP_ARGS'] %>
+      ts_agent_extra_args: <%= ENV['TS_SETUP_ARGS'] %>
+      <% end %>
+      <% if ENV['TS_CONFIG_ARGS'] %>
+      ts_agent_config_args: <%= ENV['TS_CONFIG_ARGS'] %>
+      <% end %>
   state_top:
     base:
       '*':
@@ -45,6 +43,8 @@ platforms:
       volume:
         - /sys/fs/cgroup:/sys/fs/cgroup
       provision_command:
+        - yum install -y ruby24
+        - alternatives --set ruby /usr/bin/ruby2.4
         - yum install -y audit initscripts
         - sed -i 's/local_events = yes/local_events = no/g' /etc/audit/auditd.conf
         - chkconfig auditd on
@@ -58,6 +58,10 @@ platforms:
       volume:
         - /sys/fs/cgroup:/sys/fs/cgroup
       provision_command:
+        - amazon-linux-extras install ruby2.6
+        - yum install -y ruby-devel gcc make
+        - gem install io-console --install-dir=/tmp/verifier/gems
+        - chown -R kitchen:kitchen /tmp/verifier
         - yum install -y audit initscripts
         - sed -i 's/local_events = yes/local_events = no/g' /etc/audit/auditd.conf
         - systemctl enable auditd.service
@@ -72,9 +76,20 @@ platforms:
       volume:
         - /sys/fs/cgroup:/sys/fs/cgroup
       provision_command:
+        - yum install -y ruby ruby-devel git
+        - yum install -y centos-release-scl-rh
+        - yum install -y rh-ruby24
+        # - source /opt/rh/rh-ruby24/enable
+        - |
+          printf "\n\
+          \n\
+          source /opt/rh/rh-ruby24/enable \n\
+          export X_SCLS=\"`scl enable rh-ruby24 'echo $X_SCLS'`\"\n"\
+          >> /etc/bashrc
         - yum install -y audit initscripts
         - sed -i 's/local_events = yes/local_events = no/g' /etc/audit/auditd.conf
         - systemctl enable auditd.service
+        - scl enable rh-ruby24 bash
   - name: centos-8
     image: centos:8
     driver_config:
@@ -166,7 +181,11 @@ platforms:
       provision_command:
         - sed -i 's/UsePAM yes/UsePAM no/g' /etc/ssh/sshd_config
         - systemctl enable ssh.service
-  # - name: amazonlinux-2
 
 suites:
   - name: default
+  - name: custom
+    provisioner:
+      pillars:
+        threatstack.sls:
+          ts_agent_config_args: "--set log.maxSize 22"
