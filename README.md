@@ -37,7 +37,7 @@ Integration testing can be configured two different ways.
 This method requires the following:
 * Uncommenting the section for `threatstack.sls` in `.kitchen.yml`
 * Commenting out the `pillars_from_files` section in `.kitchen.yml`
-* Setting `TS_DEPLOY_KEY` in the environment to a valid key value for tests to succeed.
+* Setting `TS_DEPLOY_KEY`, `TS_CONFIGURE_AGENT`, `TS_PACKAGE_VERSION` in the environment to a valid key value for tests to succeed.
 ```
 export TS_DEPLOY_KEY='<deploy_key>'
 bundle exec kitchen test

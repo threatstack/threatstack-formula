@@ -19,8 +19,12 @@ provisioner:
     # to grab pillar data from environment variables
     threatstack.sls:
       deploy_key: <%= ENV['TS_DEPLOY_KEY'] != nil ? ENV['TS_DEPLOY_KEY'] : 'ts_deploy_key' %>
+      <% if ENV['TS_PACKAGE_VERSION'] %>
       ts_agent_version: <%= ENV['TS_PACKAGE_VERSION'] %>
+      <% end %>
+      <% if ENV['TS_CONFIGURE_AGENT'] %>
       ts_configure_agent: <%= ENV['TS_CONFIGURE_AGENT'] %>
+      <% end %>
       <% if ENV['TS_SETUP_ARGS'] %>
       ts_agent_extra_args: <%= ENV['TS_SETUP_ARGS'] %>
       <% end %>
@@ -78,18 +82,16 @@ platforms:
       provision_command:
         - yum install -y ruby ruby-devel git
         - yum install -y centos-release-scl-rh
-        - yum install -y rh-ruby24
-        # - source /opt/rh/rh-ruby24/enable
+        - yum install -y rh-ruby26
+        - mkdir -p /opt/chef/embedded/bin
+        - ln -s "/opt/rh/rh-ruby26/root/usr/bin/gem" /opt/chef/embedded/bin/
+        - ln -s "/opt/rh/rh-ruby26/root/usr/bin/ruby" /opt/chef/embedded/bin/
         - |
-          printf "\n\
-          \n\
-          source /opt/rh/rh-ruby24/enable \n\
-          export X_SCLS=\"`scl enable rh-ruby24 'echo $X_SCLS'`\"\n"\
-          >> /etc/bashrc
+          printf "LD_LIBRARY_PATH=/opt/rh/rh-ruby26/root/usr/local/lib64:/opt/rh/rh-ruby26/root/usr/lib64\n"\
+          >> /etc/environment
         - yum install -y audit initscripts
         - sed -i 's/local_events = yes/local_events = no/g' /etc/audit/auditd.conf
         - systemctl enable auditd.service
-        - scl enable rh-ruby24 bash
   - name: centos-8
     image: centos:8
     driver_config:
@@ -114,6 +116,12 @@ platforms:
       volume:
         - /sys/fs/cgroup:/sys/fs/cgroup
       provision_command:
+        - |
+          apt-get install -y checkinstall build-essential zlib1g-dev libssl-dev libreadline6-dev libyaml-dev wget && \
+          wget https://cache.ruby-lang.org/pub/ruby/2.6/ruby-2.6.6.tar.gz && \
+          tar xfz ruby-2.6.6.tar.gz && \
+          echo "364b143def360bac1b74eb56ed60b1a0dca6439b00157ae11ff77d5cd2e92291 ruby-2.6.6.tar.gz" | sha256sum -c && \
+          cd ruby-2.6.6 && ./configure && make && make install && rm ../ruby-2.6.6.tar.gz
         - sed -i 's/UsePAM yes/UsePAM no/g' /etc/ssh/sshd_config
         - systemctl enable ssh.service
   - name: debian-9
