@@ -2,7 +2,13 @@
 
 A formula for installing Threat Stack agent
 
-This formula supports installing agent 1.x and agent 2.x
+This formula supports installing agent 2.x
+
+>>>
+**No longer supports Threat Stack agent 1.x**
+
+For 1.x support, look at the 2.x versions of this formula.
+>>>
 
 ## Available states
 The following states are available:
@@ -16,13 +22,10 @@ The following states are available:
 * `ts_configure_agent:`     [optional] If the agent should be configured during run.  Set to False if installing agent into an AMI.
     * ex. True
 * `ts_agent_version:`       [optional] Version of agent to install.  By default if this setting is omitted, the latest version will be installed.  Set a version to maintain consistency in an environment.
-    * ex. "1.4.5.0ubuntu14.0"
-* `ts_agent_config_args:`   [optional] Optional arguments to be passed to `cloudsight config` or `tsagent config` (depends on version of agent).  Use this to enable optional features.
-    * agent 1.x ex. "--enable_foo=1"
+    * ex. "2.0.0.0ubuntu20.0"
     * agent 2.x ex. "--set enable_foo 1"
-* `ts_agent_extra_args:`    [optional] Optional arguments to be passed to `cloudsight setup` or `tsagent setup` (depends on version of agent).
-    * Please refer to the agent documentation or check the appropriate help output for `cloudsight setup`/`tsagent setup`.
-* `ts_agent_1x_platforms:`  [required] This list defines the linux distributions (and versions) that should use the 1.x agent. This should only be changed if you have reviewed this salt formula, and understand the ramifications.
+* `ts_agent_extra_args:`    [optional] Optional arguments to be passed to `tsagent setup`.
+    * Please refer to the agent documentation or check the appropriate help output for `tsagent setup`.
 
 ## Testing
 There is currently no spec testing as a saltstack rspec module does not exist.
@@ -34,7 +37,7 @@ Integration testing can be configured two different ways.
 This method requires the following:
 * Uncommenting the section for `threatstack.sls` in `.kitchen.yml`
 * Commenting out the `pillars_from_files` section in `.kitchen.yml`
-* Setting `TS_DEPLOY_KEY` in the environment to a valid key value for tests to succeed.
+* Setting `TS_DEPLOY_KEY`, `TS_CONFIGURE_AGENT`, `TS_PACKAGE_VERSION` in the environment to a valid key value for tests to succeed.
 ```
 export TS_DEPLOY_KEY='<deploy_key>'
 bundle exec kitchen test
