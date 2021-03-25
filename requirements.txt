@@ -6,7 +6,7 @@ Jinja2==2.8
 MarkupSafe==0.23
 msgpack-python==0.4.7
 pycrypto==2.6.1
-PyYAML==5.1
+PyYAML==5.4
 pyzmq==15.2.0
 requests==2.20.0
 salt==2015.8.7
