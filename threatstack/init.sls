@@ -15,8 +15,15 @@
   {% set _ = pkg_location.update({ 'pkg_url': pillar['pkg_url']}) %}
 {% endif %}
 
+# If the package component is explicitly set, use the override and move on
+{% if pillar['pkg_component'] is defined %}
+  {% set _ = pkg_location.update({ 'pkg_component': pillar['pkg_component']}) %}
+{% else %}
+  {% set _ = pkg_location.update({ 'pkg_component': "main" }) %}
+{% endif %}
+
 # Check if OS is not supported in 2.X, and assign the repository URL appropriately
-{% if pkg_url is not defined %}
+{% if pkg_location.pkg_url is not defined %}
   {% set _ = pkg_location.update({ 'pkg_url': agent2_pkg_url_base}) %}
 
   # Set the rest of the URL path
@@ -51,6 +58,13 @@
     {% set gpgkey_file_uri = 'file:///etc/pki/rpm-gpg/RPM-GPG-KEY-THREATSTACK' %}
 {% endif %}
 
+# Overrride gpgcheck on yum repositories. NOT RECOMMENDED IN PRODUCTION ENVIRONMENTS
+{% if pillar['gpgcheck'] is defined %}
+  {% set gpgcheck = pillar['gpgcheck'] %}
+{% else %}
+  {% set gpgcheck = 1 %}
+{% endif %}
+
 {% if pillar['ts_agent_extra_args'] is defined %}
   {% set agent_extra_args = pillar['ts_agent_extra_args'] %}
 {% else %}
@@ -71,7 +85,7 @@ threatstack-repo:
     - name: 'curl -q -f {{ gpgkey }} | apt-key add -'
     - unless: 'apt-key list | grep "Threat Stack"'
   pkgrepo.managed:
-    - name: deb {{ pkg_location.pkg_url }} {{ os_maj_ver.ver }} main
+    - name: deb {{ pkg_location.pkg_url }} {{ os_maj_ver.ver }} {{ pkg_location.pkg_component }}
     - file: '/etc/apt/sources.list.d/threatstack.list'
 {% elif os_family=="RedHat" %}
   cmd.run:
@@ -81,7 +95,7 @@ threatstack-repo:
     - name: threatstack
     - humanname: Threat Stack Package Repository
     - gpgkey: {{ gpgkey_file_uri }}
-    - gpgcheck: 1
+    - gpgcheck: {{ gpgcheck }}
     - enabled: 1
     - baseurl: {{ pkg_location.pkg_url }}
 {% endif %}

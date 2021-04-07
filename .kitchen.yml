@@ -6,10 +6,6 @@ provisioner:
   name: salt_solo
   bootstrap_url: 'https://raw.githubusercontent.com/olhado/kitchen-salt/master/assets/install.sh'
   is_file_root: true
-  # Use this section (and comment out the `threatstack.sls` definition in the `pillars` section)
-  # to grab pillar data from the `pillar.example` file
-  # pillars_from_files:
-  #   threatstack.sls: pillar.example
   pillars:
     top.sls:
       base:
@@ -31,6 +27,10 @@ provisioner:
       <% if ENV['TS_CONFIG_ARGS'] %>
       ts_agent_config_args: <%= ENV['TS_CONFIG_ARGS'] %>
       <% end %>
+  # Use this section (and comment out the `threatstack.sls` definition in the `pillars` section)
+  # to grab pillar data from the `pillar.example` file
+  # pillars_from_files:
+  #   threatstack.sls: pillar.example
   state_top:
     base:
       '*':
@@ -38,8 +38,16 @@ provisioner:
 
 platforms:
   - name: amazonlinux-1
-    image: amazonlinux:1
+    provisioner:
+      salt_bootstrap_options: '-R archive.repo.saltstack.com stable 2019.2'
+      pillars:
+        threatstack.sls:
+          pkg_url: https://pkg.threatstack.com/v2/Amazon/1
+          gpg_key: https://app.threatstack.com/RPM-GPG-KEY-THREATSTACK
+          gpg_key_file: '/etc/pki/rpm-gpg/RPM-GPG-KEY-THREATSTACK'
+          gpg_key_file_uri: 'file:///etc/pki/rpm-gpg/RPM-GPG-KEY-THREATSTACK'
     driver_config:
+      image: amazonlinux:1
       run_command: /sbin/init
       privileged: true
       run_options:
@@ -53,8 +61,15 @@ platforms:
         - sed -i 's/local_events = yes/local_events = no/g' /etc/audit/auditd.conf
         - chkconfig auditd on
   - name: amazonlinux-2
-    image: amazonlinux:2
+    provisioner:
+      pillars:
+        threatstack.sls:
+          pkg_url: https://pkg.threatstack.com/v2/Amazon/2
+          gpg_key: https://app.threatstack.com/RPM-GPG-KEY-THREATSTACK
+          gpg_key_file: '/etc/pki/rpm-gpg/RPM-GPG-KEY-THREATSTACK'
+          gpg_key_file_uri: 'file:///etc/pki/rpm-gpg/RPM-GPG-KEY-THREATSTACK'
     driver_config:
+      image: amazonlinux:2
       run_command: /sbin/init
       privileged: true
       run_options:
@@ -69,10 +84,17 @@ platforms:
         - yum install -y audit initscripts
         - sed -i 's/local_events = yes/local_events = no/g' /etc/audit/auditd.conf
         - systemctl enable auditd.service
-    image: centos:7
   - name: centos-7
-    image: centos:7
+    provisioner:
+      salt_bootstrap_options: '-R archive.repo.saltstack.com stable 2019.2'
+      pillars:
+        threatstack.sls:
+          pkg_url: https://pkg.threatstack.com/v2/EL/7
+          gpg_key: https://app.threatstack.com/RPM-GPG-KEY-THREATSTACK
+          gpg_key_file: '/etc/pki/rpm-gpg/RPM-GPG-KEY-THREATSTACK'
+          gpg_key_file_uri: 'file:///etc/pki/rpm-gpg/RPM-GPG-KEY-THREATSTACK'
     driver_config:
+      image: centos:7
       run_command: /sbin/init
       privileged: true
       run_options:
@@ -93,8 +115,15 @@ platforms:
         - sed -i 's/local_events = yes/local_events = no/g' /etc/audit/auditd.conf
         - systemctl enable auditd.service
   - name: centos-8
-    image: centos:8
+    provisioner:
+      pillars:
+        threatstack.sls:
+          pkg_url: https://pkg.threatstack.com/v2/EL/8
+          gpg_key: https://app.threatstack.com/RPM-GPG-KEY-THREATSTACK
+          gpg_key_file: '/etc/pki/rpm-gpg/RPM-GPG-KEY-THREATSTACK'
+          gpg_key_file_uri: 'file:///etc/pki/rpm-gpg/RPM-GPG-KEY-THREATSTACK'
     driver_config:
+      image: centos:8
       run_command: /sbin/init
       privileged: true
       run_options:
@@ -106,8 +135,15 @@ platforms:
         - sed -i 's/local_events = yes/local_events = no/g' /etc/audit/auditd.conf
         - systemctl enable auditd.service
   - name: debian-8
-    image: debian:8
+    provisioner:
+      salt_bootstrap_options: '-R archive.repo.saltstack.com'
+      pillars:
+        threatstack.sls:
+          pkg_url: https://pkg.threatstack.com/v2/Ubuntu
+          gpg_key: https://app.threatstack.com/APT-GPG-KEY-THREATSTACK
+          pkg_component: main
     driver_config:
+      image: debian:8
       run_command: /sbin/init
       cap_add:
         - SYS_ADMIN
@@ -125,8 +161,14 @@ platforms:
         - sed -i 's/UsePAM yes/UsePAM no/g' /etc/ssh/sshd_config
         - systemctl enable ssh.service
   - name: debian-9
-    image: debian:9
+    provisioner:
+      pillars:
+        threatstack.sls:
+          pkg_url: https://pkg.threatstack.com/v2/Ubuntu
+          gpg_key: https://app.threatstack.com/APT-GPG-KEY-THREATSTACK
+          pkg_component: main
     driver_config:
+      image: debian:9
       run_command: /bin/systemd
       cap_add:
         - SYS_ADMIN
@@ -138,8 +180,14 @@ platforms:
         - sed -i 's/UsePAM yes/UsePAM no/g' /etc/ssh/sshd_config
         - systemctl enable ssh.service
   - name: debian-10
-    image: debian:10
+    provisioner:
+      pillars:
+        threatstack.sls:
+          pkg_url: https://pkg.threatstack.com/v2/Ubuntu
+          gpg_key: https://app.threatstack.com/APT-GPG-KEY-THREATSTACK
+          pkg_component: main
     driver_config:
+      image: debian:10
       run_command: /sbin/init
       cap_add:
         - SYS_ADMIN
@@ -151,8 +199,14 @@ platforms:
         - sed -i 's/UsePAM yes/UsePAM no/g' /etc/ssh/sshd_config
         - systemctl enable ssh.service
   - name: ubuntu-16.04
-    image: ubuntu:16.04
+    provisioner:
+      pillars:
+        threatstack.sls:
+          pkg_url: https://pkg.threatstack.com/v2/Ubuntu
+          gpg_key: https://app.threatstack.com/APT-GPG-KEY-THREATSTACK
+          pkg_component: main
     driver_config:
+      image: ubuntu:16.04
       run_command: /sbin/init
       cap_add:
         - SYS_ADMIN
@@ -164,8 +218,14 @@ platforms:
         - sed -i 's/UsePAM yes/UsePAM no/g' /etc/ssh/sshd_config
         - systemctl enable ssh.service
   - name: ubuntu-18.04
-    image: ubuntu:18.04
+    provisioner:
+      pillars:
+        threatstack.sls:
+          pkg_url: https://pkg.threatstack.com/v2/Ubuntu
+          gpg_key: https://app.threatstack.com/APT-GPG-KEY-THREATSTACK
+          pkg_component: main
     driver_config:
+      image: ubuntu:18.04
       run_command: /sbin/init
       cap_add:
         - SYS_ADMIN
@@ -177,8 +237,14 @@ platforms:
         - sed -i 's/UsePAM yes/UsePAM no/g' /etc/ssh/sshd_config
         - systemctl enable ssh.service
   - name: ubuntu-20.04
-    image: ubuntu:20.04
+    provisioner:
+      pillars:
+        threatstack.sls:
+          pkg_url: https://pkg.threatstack.com/v2/Ubuntu
+          gpg_key: https://app.threatstack.com/APT-GPG-KEY-THREATSTACK
+          pkg_component: main
     driver_config:
+      image: ubuntu:20.04
       run_command: /sbin/init
       cap_add:
         - SYS_ADMIN
