@@ -146,7 +146,7 @@ tsagent-config:
 threatstack:
   service.running:
     - enable: True
-    # - restart: True
+    - restart: True
   {% if pillar['ts_agent_config_args'] is defined %}
     - watch:
       - cmd: tsagent-config
