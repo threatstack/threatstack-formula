@@ -139,11 +139,19 @@ tsagent-config:
 # NOTE: We do not signal the cloudsight service to restart via the package
 # resource because the workflow differs between fresh installation and
 # upgrades.  The package scripts will handle this.
+#
+# We only enable the service if `ts_configure_agent` is True, because if
+# the agent isn't configured, starting up the agent will fail
+{% if pillar['ts_configure_agent'] is not defined or pillar['ts_configure_agent'] == True %}
 threatstack:
   service.running:
     - enable: True
     - restart: True
-{% if pillar['ts_agent_config_args'] is defined %}
+  {% if pillar['ts_agent_config_args'] is defined %}
     - watch:
       - cmd: tsagent-config
+  {% endif %}
+{% else %}
+threatstack:
+  service.enabled
 {% endif %}
