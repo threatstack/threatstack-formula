@@ -37,10 +37,10 @@ provisioner:
 
 platforms:
   - name: amazonlinux-1
-    image: amazonlinux:1
     provisioner:
       salt_bootstrap_options: -R archive.repo.saltproject.io
     driver_config:
+      image: amazonlinux:1
       run_command: /sbin/init
       privileged: true
       run_options:
@@ -54,8 +54,26 @@ platforms:
         - sed -i 's/local_events = yes/local_events = no/g' /etc/audit/auditd.conf
         - chkconfig auditd on
   - name: amazonlinux-2
-    image: amazonlinux:2
     driver_config:
+      image: amazonlinux:2
+      run_command: /sbin/init
+      privileged: true
+      run_options:
+        env: container=docker
+      volume:
+        - /sys/fs/cgroup:/sys/fs/cgroup
+      provision_command:
+        - amazon-linux-extras install ruby2.6
+        - yum -y groupinstall "Development Tools"
+        - yum install -y ruby-devel gcc make
+        - gem install io-console --install-dir=/tmp/verifier/gems
+        - chown -R kitchen:kitchen /tmp/verifier
+        - yum install -y audit initscripts
+        - sed -i 's/local_events = yes/local_events = no/g' /etc/audit/auditd.conf
+        - systemctl enable auditd.service
+  - name: amazonlinux-2-arm
+    driver_config:
+      image: arm64v8/amazonlinux:2
       run_command: /sbin/init
       privileged: true
       run_options:
@@ -72,8 +90,8 @@ platforms:
         - sed -i 's/local_events = yes/local_events = no/g' /etc/audit/auditd.conf
         - systemctl enable auditd.service
   - name: centos-7
-    image: centos:7
     driver_config:
+      image: centos:7
       run_command: /sbin/init
       privileged: true
       run_options:
@@ -94,8 +112,21 @@ platforms:
         - sed -i 's/local_events = yes/local_events = no/g' /etc/audit/auditd.conf
         - systemctl enable auditd.service
   - name: centos-8
-    image: centos:8
     driver_config:
+      image: centos:8
+      run_command: /sbin/init
+      privileged: true
+      run_options:
+        env: container=docker
+      volume:
+        - /sys/fs/cgroup:/sys/fs/cgroup
+      provision_command:
+        - yum install -y audit initscripts
+        - sed -i 's/local_events = yes/local_events = no/g' /etc/audit/auditd.conf
+        - systemctl enable auditd.service
+  - name: centos-8
+    driver_config:
+      image: arm64v8/centos:8
       run_command: /sbin/init
       privileged: true
       run_options:
@@ -107,8 +138,8 @@ platforms:
         - sed -i 's/local_events = yes/local_events = no/g' /etc/audit/auditd.conf
         - systemctl enable auditd.service
   - name: debian-9
-    image: debian:9
     driver_config:
+      image: debian:9
       run_command: /bin/systemd
       cap_add:
         - SYS_ADMIN
@@ -120,8 +151,21 @@ platforms:
         - sed -i 's/UsePAM yes/UsePAM no/g' /etc/ssh/sshd_config
         - systemctl enable ssh.service
   - name: debian-10
-    image: debian:10
     driver_config:
+      image: debian:10
+      run_command: /sbin/init
+      cap_add:
+        - SYS_ADMIN
+      run_options:
+        env: container=docker
+      volume:
+        - /sys/fs/cgroup:/sys/fs/cgroup
+      provision_command:
+        - sed -i 's/UsePAM yes/UsePAM no/g' /etc/ssh/sshd_config
+        - systemctl enable ssh.service
+  - name: debian-10-arm
+    driver_config:
+      image: arm64v8/debian:10
       run_command: /sbin/init
       cap_add:
         - SYS_ADMIN
@@ -133,8 +177,21 @@ platforms:
         - sed -i 's/UsePAM yes/UsePAM no/g' /etc/ssh/sshd_config
         - systemctl enable ssh.service
   - name: ubuntu-18.04
-    image: ubuntu:18.04
     driver_config:
+      image: ubuntu:18.04
+      run_command: /sbin/init
+      cap_add:
+        - SYS_ADMIN
+      run_options:
+        env: container=docker
+      volume:
+        - /sys/fs/cgroup:/sys/fs/cgroup
+      provision_command:
+        - sed -i 's/UsePAM yes/UsePAM no/g' /etc/ssh/sshd_config
+        - systemctl enable ssh.service
+  - name: ubuntu-18.04-arm
+    driver_config:
+      image: arm64v8/ubuntu:18.04
       run_command: /sbin/init
       cap_add:
         - SYS_ADMIN
@@ -146,8 +203,21 @@ platforms:
         - sed -i 's/UsePAM yes/UsePAM no/g' /etc/ssh/sshd_config
         - systemctl enable ssh.service
   - name: ubuntu-20.04
-    image: ubuntu:20.04
     driver_config:
+      image: ubuntu:20.04
+      run_command: /sbin/init
+      cap_add:
+        - SYS_ADMIN
+      run_options:
+        env: container=docker
+      volume:
+        - /sys/fs/cgroup:/sys/fs/cgroup
+      provision_command:
+        - sed -i 's/UsePAM yes/UsePAM no/g' /etc/ssh/sshd_config
+        - systemctl enable ssh.service
+  - name: ubuntu-20.04-arm
+    driver_config:
+      image: arm64v8/ubuntu:20.04
       run_command: /sbin/init
       cap_add:
         - SYS_ADMIN
