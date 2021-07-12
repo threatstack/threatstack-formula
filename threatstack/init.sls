@@ -16,7 +16,7 @@
 {% endif %}
 
 # Check if OS is not supported in 2.X, and assign the repository URL appropriately
-{% if pkg_url is not defined %}
+{% if pillar['pkg_url'] is not defined %}
   {% set _ = pkg_location.update({ 'pkg_url': agent2_pkg_url_base}) %}
 
   # Set the rest of the URL path
