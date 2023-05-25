@@ -12,5 +12,5 @@ requests==2.20.0
 salt==2015.8.7
 singledispatch==3.4.0.3
 six==1.10.0
-tornado==4.3
+tornado==6.3.2
 wheel==0.29.0
